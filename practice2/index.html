@@ -1,0 +1,69 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="shortcut icon" href="#" >
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" crossorigin="anonymous" />
+        <link rel="stylesheet" href="./main.css" />        
+    </head>
+    <body>
+        <div id="personListWrapper" class="container">
+            <form class="filterForm row m-b-md">
+                <div class="col-sm-2">
+                    <input type="text" class="form-control" name="id" value="" placeholder="ID" />
+                </div>
+                <div class="col-sm-2">
+                    <input type="text" class="form-control" name="firstName" value="" placeholder="Имя" />
+                </div>
+                <div class="col-sm-2">
+                    <input type="text" class="form-control" name="lastName" value="" placeholder="Фамилия" />
+                    <link href="main.css" rel="stylesheet" type="text/css"/>
+                </div>
+                <div class="col-sm-2">
+                    <input type="text" class="form-control" name="email" value="" placeholder="E-mail" />
+                </div>
+                <div class="col-sm-2">
+                    <input type="text" class="form-control" name="phone" value="" placeholder="Телефон" />
+                </div>
+                <div class="col-sm-1">
+                    <button type="submit" class="btn btn-primary btn-block">Найти</button>
+                </div>
+                <div class="col-sm-1">
+                    <button type="button" class="reset-button btn btn-primary btn-block">Сбросить</button>
+                </div>
+            </form>
+            <div class="personTable"></div>
+            <div class="personDetail"></div>
+            <div class="row"><!--
+                --><div class="col-sm-2 pull-bottom">
+                    <label for="dataSet">Набор данных</label>
+                    <select id="dataSet" class="dataSet form-control">
+                        <option value="small">Маленький</option>
+                        <option value="large" selected>Большой</option>
+                    </select>
+                </div><!--
+                --><div class="col-sm-1 pull-bottom">
+                    <button type="button" class="refresh m-t-xs btn btn-primary btn-block">Обновить</button>
+                </div><!--
+                --><div class="col-sm-6 text-center pull-bottom">
+                    <div class="personPagination"></div>
+                </div><!--
+                --><div class="col-sm-1 pull-bottom">
+                </div><!--
+                --><div class="col-sm-2 pull-bottom">
+                    <label for="onPage">Записей на странице:</label>
+                    <select id="onPage" class="onPage form-control">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="15">15</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.25.0/babel.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/7.0.0/polyfill.js"></script>
+        <script type="text/babel" src="./main.js"></script>
+    </body>
+</html>
