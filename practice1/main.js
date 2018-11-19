@@ -1,10 +1,18 @@
-function parseUrl(url) {
+//обычное решение
+function parseUrl1(href) {
     let a = document.createElement('a');
-    a.href = url;
+    a.href = href;
     return a;
 }
 
-let a = parseUrl('http://tutu.ru:8080/do/any.php?a=1&b[]=a&b[]=b#foo')
+//в одну строку
+function parseUrl(href) {
+    return (el => (el.href = href) && el)(document.createElement('a'));
+}
+
+let a = parseUrl('http://tutu.ru:8080/do/any.php?a=1&b[]=a&b[]=b#foo');
+
+console.log(a);
 
 console.log(a.href == "http://tutu.ru:8080/do/any.php?a=1&b[]=a&b[]=b#foo");
 console.log(a.hash == "#foo");
