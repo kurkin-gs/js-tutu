@@ -47,13 +47,11 @@ class paginationBuilder {
 
     pageNumbers(current, last) {
         let delta = 2,
-                left = current - delta,
-                right = current + delta + 1,
                 range = [],
                 rangeWithDots = [],
                 l;
         for (let i = 1; i <= last; i++) {
-            if (i == 1 || i == last || i >= left && i < right) {
+            if (i == 1 || i == last || i >= current - delta && i < current + delta) {
                 range.push(i);
             }
         }
@@ -74,14 +72,11 @@ class paginationBuilder {
     }
 
     build(current, last) {
-        if (!current || !last)
-            return;
-        let numbers = this.pageNumbers(current, last);
-        return $("<nav/>").append($("<ul/>").addClass("pagination").append(
+        return current && last ? $("<nav/>").append($("<ul/>").addClass("pagination").append(
                 this.showArrows ? $("<li/>").addClass("prev").append(() => (current != 1 ? $("<a/>").attr({href: "#"}) : $("<span/>")).html("Назад")) : null,
-                numbers.map(number => $("<li/>").addClass("page").addClass(number == current ? "active" : null).append(() => (typeof number == "number" && number != current ? $("<a/>").attr({href: "#", "data-page": number}) : $("<span/>")).html(number))),
+                this.pageNumbers(current, last).map(number => $("<li/>").addClass("page").addClass(number == current ? "active" : null).append(() => (typeof number == "number" && number != current ? $("<a/>").attr({href: "#", "data-page": number}) : $("<span/>")).html(number))),
                 this.showArrows ? $("<li/>").addClass("next").append(() => (current != last ? $("<a/>").attr({href: "#"}) : $("<span/>")).html("Вперед")) : null
-                ));
+                )) : false;
     }
 
 }
@@ -93,7 +88,7 @@ class preloader {
         if (!$el.length)
             return;
         self.$el = $el;
-        self.$el.prepend($("<div class='loader-wrapper'><div class='loader-inner'><div class='loader'></div></div></div>"));
+        self.$el.prepend($("<div/>").addClass("loader-wrapper").append($("<div/>").addClass("loader-inner").append($("<div/>").addClass("loader"))));
     }
 
     show() {
@@ -115,9 +110,9 @@ class preloader {
 }
 
 class helper {
+
     static getSpecificProps(row, props) {
-        return Object.keys(row)
-                .filter(key => props.includes(key)).reduce((obj, key) => {
+        return Object.keys(row).filter(key => props.includes(key)).reduce((obj, key) => {
             obj[key] = row[key];
             return obj;
         }, {});
@@ -136,8 +131,8 @@ class helper {
 
 class personList {
 
-    constructor($warpper) {
-        if (!$warpper.length)
+    constructor($wrapper) {
+        if (!$wrapper.length)
             return;
         let self = this;
         self.infoDetail = {
@@ -153,18 +148,14 @@ class personList {
             small: "http://www.filltext.com/?rows=32&id=%7Bnumber%7C1000%7D&firstName=%7BfirstName%7D&lastName=%7BlastName%7D&email=%7Bemail%7D&phone=%7Bphone%7C(xxx)xxx-xx-xx%7D&adress=%7BaddressObject%7D&description=%7Blorem%7C32%7D",
             large: "http://www.filltext.com/?rows=1000&id={number|1000}&firstName={firstName}&delay=3&lastName={lastName}&email={email}&phone={phone|(xxx)xxx-xx-xx}&adress={addressObject}&description={lorem|32}",
         };
-        self.$wrapper = $warpper;
+        self.$wrapper = $wrapper;
         self.sort = {};
         self.filter = {};
-        self.sortKey = "firstName";
-        self.dataSet = "large";
-        self.reverseSortOrder();
+
         self.$table = self.$wrapper.find(".personTable");
         self.$pagination = self.$wrapper.find(".personPagination");
         self.$detail = self.$wrapper.find(".personDetail");
         self.$filterForm = self.$wrapper.find(".filterForm");
-        self.limit = $(self.$onPage).val() || 10;
-        self.page = 1;
         self.preloader = new preloader(self.$wrapper);
         self.tableBuilder = new tableBuilder();
         self.paginationBuilder = new paginationBuilder();
@@ -205,7 +196,7 @@ class personList {
 
         $(document, self.$table).on("click", "th[data-sort]", function () {
             self.sortKey = $(this).data("sort");
-            self.reverseSortOrder();
+            self.triggerSortOrder();
             self.sortList();
         });
 
@@ -225,8 +216,6 @@ class personList {
             self.$filterForm[0].reset();
             self.$filterForm.trigger("submit");
         });
-
-
 
         $(document, self.$wrapper).on("change", "select.dataSet", function (e) {
             e.preventDefault();
@@ -254,7 +243,7 @@ class personList {
                 let value = personTmp[key];
                 let info = self.infoDetail[key];
                 let $dt = $("<dt/>").addClass("col-sm-3").html(info.name);
-                let $dd = $("<dd/>").addClass("col-sm-9").html(info.type ? $("<textarea />").val(value) : value);
+                let $dd = $("<dd/>").addClass("col-sm-9").html(info.type == "textarea" ? $("<textarea />").val(value) : value);
                 $row.append($dt, $dd);
             });
             if ($rows.length > 0) {
@@ -273,29 +262,29 @@ class personList {
         self.$detail.empty();
     }
 
-    reverseSortOrder() {
+    triggerSortOrder() {
         let self = this;
         let order = self.sort[self.sortKey];
-        self.sort[self.sortKey] = (order && order == "asc") ? "desc" : "asc";
+        self.sort[self.sortKey] = order && order == "asc" ? "desc" : "asc";
     }
 
     setPersonList() {
         let self = this;
-        self.preloader.show();
         self.selectedPerson = null;
         let url = self.getUrl();
         if (!url)
             return;
+        self.preloader.show();
         $.ajax({
             url: url,
             dataType: "json",
             method: "get",
             success: function (data) {
-                self.filter = {};
                 if ("error" in data[0]) {
                     alert("Произошла ошибка: " + data[0].error);
                 } else {
                     self.$filterForm[0].reset();
+                    self.filter = {};
                     self.persons = data;
                     self.sortList(false);
                     self.update();
@@ -321,13 +310,9 @@ class personList {
             if (order == "desc") {
                 [a, b] = [b, a];
             }
-            let val1 = (typeof a[self.sortKey] == "string") ? a[self.sortKey].toLowerCase() : a[self.sortKey];
-            let val2 = (typeof b[self.sortKey] == "string") ? b[self.sortKey].toLowerCase() : b[self.sortKey];
-            if (val2 < val1)
-                return 1;
-            if (val1 < val2)
-                return -1;
-            return 0;
+            let val1 = typeof a[self.sortKey] == "string" ? a[self.sortKey].toLowerCase() : a[self.sortKey];
+            let val2 = typeof b[self.sortKey] == "string" ? b[self.sortKey].toLowerCase() : b[self.sortKey];
+            return val2 < val1 ? 1 : val1 < val2 ? -1 : 0;
         });
         if (update)
             self.update();
@@ -337,17 +322,7 @@ class personList {
         let self = this;
 
         self.personsFiltered = self.persons.filter(person => {
-            let conditions = [];
-
-            Object.keys(self.filter).map(key => {
-                let value = self.filter[key];
-                if (typeof person[key] == "number") {
-                    conditions.push(!self.filter[key] || person[key] == value);
-                } else {
-                    conditions.push(!self.filter[key] || person[key].toLowerCase().indexOf(value.toLowerCase()) != -1);
-                }
-            });
-
+            let conditions = Object.keys(self.filter).map(key => !self.filter[key] || ((value) => typeof person[key] == "number" ? person[key] == value : person[key].toLowerCase().indexOf(value.toLowerCase()) != -1)(self.filter[key]));
             return conditions.filter(c => c).length == conditions.length;
         });
 
@@ -356,11 +331,8 @@ class personList {
 
         self.currentList = self.personsFiltered.slice(self.page * self.limit - self.limit, self.page * self.limit)
         self.tableBuilder.list = self.currentList.map(row => helper.getSpecificProps(row, ['id', 'firstName', 'lastName', 'email', 'phone']));
-        if (self.currentList.filter(row => row.id == self.selectedPerson).length > 0) {
-            self.showDetailPerson();
-        } else {
-            self.hideDetailPerson();
-        }
+
+        self.currentList.filter(row => row.id == self.selectedPerson).length > 0 ? self.showDetailPerson() : self.hideDetailPerson();
 
         self.$table.empty().html(self.tableBuilder.build());
         self.$table.find("tr:eq(0)").find("th:eq(0),td:eq(0)").css({width: "10%"});
@@ -376,11 +348,11 @@ class personList {
         let totalPages = this.getTotalPages();
         if (this.page == page)
             return;
+        this.page = page;
         if (this.page < 1)
             this.page = 1;
         if (this.page > totalPages)
             this.page = totalPages;
-        this.page = page;
         this.update();
     }
 
@@ -401,7 +373,13 @@ class personList {
     }
 
     init() {
-        this.setPersonList();
+        var self = this;
+        self.sortKey = "firstName";
+        self.dataSet = self.$wrapper.find("select.dataSet").val() || "small";
+        self.limit = self.$wrapper.find("select.onPage").val() || 10;
+        self.page = 1;
+        self.triggerSortOrder();
+        self.setPersonList();
     }
 
 }
