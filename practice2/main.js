@@ -127,6 +127,36 @@ class helper {
         return returnArray;
     }
 
+    static get(url) {
+        // Возвращаем новое Обещание.
+        return new Promise(function (resolve, reject) {
+            // Делаем привычные XHR вещи
+            var req = new XMLHttpRequest();
+            req.open('GET', url);
+
+            req.onload = function () {
+                // Этот кусок вызовется даже при 404’ой ошибке
+                // поэтому проверяем статусы ответа
+                if (req.status == 200) {
+                    // Завершаем Обещание с текстом ответа
+                    resolve(req.response);
+                } else {
+                    // Обламываемся, и передаём статус ошибки
+                    // что бы облегчить отладку и поддержку
+                    reject(Error(req.statusText));
+                }
+            };
+
+            // отлавливаем ошибки сети
+            req.onerror = function () {
+                reject(Error("Network Error"));
+            };
+
+            // Делаем запрос
+            req.send();
+        });
+    }
+
 }
 
 class personList {
@@ -275,24 +305,23 @@ class personList {
         if (!url)
             return;
         self.preloader.show();
-        $.ajax({
-            url: url,
-            dataType: "json",
-            method: "get",
-            success: function (data) {
-                if ("error" in data[0]) {
-                    alert("Произошла ошибка: " + data[0].error);
-                } else {
-                    self.$filterForm[0].reset();
-                    self.filter = {};
-                    self.persons = data;
-                    self.sortList(false);
-                    self.update();
-                }
-            }
-        }).complete(() => {
+
+        helper.get(url).then(response => JSON.parse(response), error => {
+            alert("Произошла ошибка: " + error);
             self.preloader.hide();
+        }).then(function (data) {
+            if ("error" in data[0]) {
+                alert("Произошла ошибка: " + data[0].error);
+            } else {
+                self.$filterForm[0].reset();
+                self.filter = {};
+                self.persons = data;
+                self.sortList(false);
+                self.update();
+                self.preloader.hide();
+            }
         });
+
     }
 
     getUrl() {
